@@ -163,8 +163,10 @@
               <td class="item-name">
                 <input type="text" v-model="item.itemName" />
               </td>
-              <td class="qty"><input type="text" v-model="item.qty" /></td>
-              <td class="price"><input type="text" v-model="item.price" /></td>
+              <td class="qty"><input type="number" v-model="item.qty" /></td>
+              <td class="price">
+                <input type="number" step="0.01" v-model="item.price" />
+              </td>
               <td class="total flex">
                 ${{ (item.total = item.qty * item.price) }}
               </td>
@@ -204,7 +206,7 @@
 </template>
 
 <script>
-import { mapMutations } from "vuex";
+import { mapMutations, mapActions } from "vuex";
 import { uid } from "uid";
 import db from "../firebase/firebaseInit";
 import Loading from "../components/Loading.vue";
@@ -255,6 +257,8 @@ export default {
 
   methods: {
     ...mapMutations(["TOGGLE_INVOICE", "TOGGLE_MODAL"]),
+
+    ...mapActions(["GET_INVOICES"]),
 
     checkOutsideClick(e) {
       if (e.target === this.$refs.invoiceWrap) {
@@ -338,6 +342,8 @@ export default {
       this.loading = false;
 
       this.TOGGLE_INVOICE();
+
+      this.GET_INVOICES();
     },
 
     submitForm() {
