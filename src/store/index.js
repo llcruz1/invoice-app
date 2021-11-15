@@ -7,7 +7,9 @@ export default createStore({
     invoiceModal: false,
     modalActive: false,
     invoicesLoaded: false,
+    currentInvoiceArray: [],
   },
+
   mutations: {
     TOGGLE_INVOICE(state) {
       state.invoiceModal = !state.invoiceModal;
@@ -24,7 +26,14 @@ export default createStore({
     INVOICES_LOADED(state) {
       state.invoicesLoaded = true;
     },
+
+    SET_CURRENT_INVOICE(state, payload) {
+      state.currentInvoiceArray = state.invoiceData.filter((invoice) => {
+        return invoice.invoiceId === payload;
+      });
+    },
   },
+
   actions: {
     async GET_INVOICES({ commit, state }) {
       const getData = db.collection("invoices");
@@ -64,5 +73,6 @@ export default createStore({
       commit("INVOICES_LOADED");
     },
   },
+
   modules: {},
 });
