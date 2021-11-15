@@ -5,6 +5,7 @@
     class="invoice-wrap flex flex-column"
   >
     <form @submit.prevent="submitForm" class="invoice-content">
+      <Loading v-show="loading" />
       <h1>New Invoice</h1>
 
       <!-- Bill From -->
@@ -103,7 +104,7 @@
 
       <!-- Invoice Work Details -->
       <div class="invoice-work flex flex-column">
-        <div class="payment-flex">
+        <div class="payment flex">
           <div class="input flex flex-column">
             <label for="invoiceDate">Invoice Date</label>
             <input
@@ -114,16 +115,16 @@
               v-model="invoiceDate"
             />
           </div>
-        </div>
 
-        <div class="input flex flex-column">
-          <label for="paymentDueDate">Payment Due</label>
-          <input
-            required
-            type="text"
-            id="paymentDueDate"
-            v-model="paymentDueDate"
-          />
+          <div class="input flex flex-column">
+            <label for="paymentDueDate">Payment Due</label>
+            <input
+              required
+              type="text"
+              id="paymentDueDate"
+              v-model="paymentDueDate"
+            />
+          </div>
         </div>
 
         <div class="input flex flex-column">
@@ -152,19 +153,18 @@
               <th class="item-name">Item Name</th>
               <th class="qty">Qty</th>
               <th class="price">Price</th>
-              <th class="total">Total</th>
+              <th class="total">Toal</th>
             </tr>
-
             <tr
               class="table-items flex"
               v-for="(item, index) in invoiceItemList"
               :key="index"
             >
               <td class="item-name">
-                <input type=" v-model='item.itemName" />
+                <input type="text" v-model="item.itemName" />
               </td>
-              <td class="qty"><input type=" v-model='item.qty" /></td>
-              <td class="price"><input type=" v-model='item.price" /></td>
+              <td class="qty"><input type="text" v-model="item.qty" /></td>
+              <td class="price"><input type="text" v-model="item.price" /></td>
               <td class="total flex">
                 ${{ (item.total = item.qty * item.price) }}
               </td>
@@ -199,6 +199,9 @@
 
 <script>
 import { mapMutations } from "vuex";
+import { uid } from "uid";
+import db from "../firebase/firebaseInit";
+import Loading from "../components/Loading.vue";
 
 export default {
   name: "InvoiceModal",
@@ -231,11 +234,116 @@ export default {
     };
   },
 
+  components: {
+    Loading,
+  },
+
+  created() {
+    // Get current date for invoice date field
+    this.invoiceDateUnix = Date.now();
+    this.invoiceDate = new Date(this.invoiceDateUnix).toLocaleDateString(
+      "en-us",
+      this.dateOptions
+    );
+  },
+
   methods: {
     ...mapMutations(["TOGGLE_INVOICE"]),
 
     closeInvoice() {
       this.TOGGLE_INVOICE();
+    },
+
+    addNewInvoiceItem() {
+      this.invoiceItemList.push({
+        id: uid(),
+        itemName: "",
+        qty: "",
+        price: 0,
+        total: 0,
+      });
+    },
+
+    deleteInvoiceItem(id) {
+      console.log(id);
+      this.invoiceItemList = this.invoiceItemList.filter(
+        (item) => item.id !== id
+      );
+    },
+
+    calculateInvoiceTotal() {
+      this.invoiceTotal = 0;
+      this.invoiceItemList.forEach((item) => {
+        this.invoiceTotal += item.total;
+      });
+    },
+
+    publishInvoice() {
+      this.invoicePending = true;
+    },
+
+    saveDraft() {
+      this.invoiceDraft = true;
+    },
+
+    async uploadInvoice() {
+      if (this.invoiceItemList.length <= 0) {
+        alert("Please ensure you filled out work items!");
+        return;
+      }
+
+      this.loading = true;
+
+      this.calculateInvoiceTotal();
+
+      const dataBase = db.collection("invoices").doc();
+
+      await dataBase.set({
+        invoiceId: uid(6),
+        billerStreetAddress: this.billerStreetAddress,
+        billerCity: this.billerCity,
+        billerZipCode: this.billerZipCode,
+        billerCountry: this.billerCountry,
+        clientName: this.clientName,
+        clientEmail: this.clientEmail,
+        clientStreetAddress: this.clientStreetAddress,
+        clientCity: this.clientCity,
+        clientZipCode: this.clientZipCode,
+        clientCountry: this.clientCountry,
+        invoiceDate: this.invoiceDate,
+        invoiceDateUnix: this.invoiceDateUnix,
+        paymentTerms: this.paymentTerms,
+        paymentDueDate: this.paymentDueDate,
+        paymentDueDateUnix: this.paymentDueDateUnix,
+        productDescription: this.productDescription,
+        invoiceItemList: this.invoiceItemList,
+        invoiceTotal: this.invoiceTotal,
+        invoicePending: this.invoicePending,
+        invoiceDraft: this.invoiceDraft,
+        invoicePaid: null,
+      });
+
+      this.loading = false;
+
+      this.TOGGLE_INVOICE();
+    },
+
+    submitForm() {
+      this.uploadInvoice();
+    },
+  },
+
+  watch: {
+    paymentTerms() {
+      // Sum paymentTerms to paymentDueDateUnix and
+      // format paymentDueDate as paymentDueDateUnix to local date string
+      const futureDate = new Date();
+      this.paymentDueDateUnix = futureDate.setDate(
+        futureDate.getDate() + parseInt(this.paymentTerms)
+      );
+      this.paymentDueDate = new Date(
+        this.paymentDueDateUnix
+      ).toLocaleDateString("en-us", this.dateOptions);
     },
   },
 };
