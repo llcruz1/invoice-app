@@ -1,25 +1,12 @@
-# invoice
+## Invoce App
+ A demo CRUD application built along with [John Komarnicki's tutorial](https://www.youtube.com/watch?v=vsJtN54aA7w).
 
-## Project setup
-```
-npm install
-```
+## Technologies
+Project built with the following tools:
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+* Vue 3
+* Vuex
+* Firebase
 
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-# invoice-app
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
